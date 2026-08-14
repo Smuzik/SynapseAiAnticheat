@@ -1,0 +1,119 @@
+# ==============================================================================
+#                       Synapse AI-AntiCheat v2.0.0
+#             Developed by: Даня (smyzik / smerchhh) & SynapseLabs
+#                     Official Discord: https://dsc.gg/synapselabs
+#             Supported Platforms: Spigot, Paper, Purpur (1.16.5 - 1.20.4+)
+# ==============================================================================
+
+# Официальные ссылки и брендинг студии
+discord:
+  # Ссылка на ваш Discord сервер (отображается в сообщениях, меню и при заморозке)
+  invite_url: "https://dsc.gg/synapselabs"
+
+  # Интеграция с Discord Webhook (трансляция логов в канал модерации)
+  webhook:
+    enabled: false
+    # Вставьте сюда URL вебхука из канала 🚨・логи-сервера
+    url: "https://discord.com/api/webhooks/YOUR_WEBHOOK_HERE"
+    min_vl_to_send: 4
+    title: "🚨 Зафиксировано нарушение на сервере"
+    embed_color: "#00E5FF"
+
+# ==============================================================================
+# ИНТЕГРАЦИЯ С ПЛАГИНАМИ БАНОВ (LiteBans, AdvancedBan, LibertyBans, Essentials, Bukkit)
+# ==============================================================================
+punishment:
+  # Режим наказаний:
+  # AUTO - автоматически определяет установленный плагин (LiteBans/AdvancedBan/LibertyBans/Essentials)
+  # CUSTOM_COMMAND - всегда выполнять команду из секции commands
+  # BUKKIT - использовать встроенную ванильную систему банов Bukkit
+  mode: "AUTO"
+
+  # Шаблоны команд наказаний (доступны переменные: {player}, {reason}, {admin}, {discord_url}, {vl})
+  commands:
+    # Бан при нажатии кнопки в GUI меню
+    manual_ban: "ban {player} 30d Использование читов [SynapseAI] -s"
+
+    # Авто-бан при превышении порога VL (если включен в detection.actions)
+    auto_ban: "tempban {player} 14d Авто-бан: Читы (VL: {vl}) [SynapseAI] -s"
+
+    # Бан при выходе во время проверки (Отказ от проверки)
+    leave_on_freeze_ban: "tempban {player} 30d Отказ от проверки на читы [SynapseAI] -s"
+
+    # Команда кика
+    kick: "kick {player} {reason}"
+
+# Настройки ИИ-модели
+model:
+  file: "anticheat_model.onnx"
+
+# Настройки детекции читов
+detection:
+  # Минимальная уверенность нейросети (0.00 - 1.00) для фиксации нарушения
+  min_confidence: 0.70
+
+  # Прирост VL за каждый читерский удар
+  vl_per_flag: 1
+
+  # Спад VL каждые 5 секунд честного боя
+  vl_decay: 1
+
+  # Автоматическая защита от лагов (TPS Threshold)
+  tps_protection:
+    enabled: true
+    min_tps: 17.5
+
+  actions:
+    # Порог VL для оповещения администрации в игре
+    alert_vl_threshold: 3
+
+    # Звуковое оповещение для персонала
+    sound_alert:
+      enabled: true
+      sound: "ENTITY_EXPERIENCE_ORB_PICKUP"
+      volume: 1.0
+      pitch: 1.2
+
+    # Порог VL для частичной блокировки урона читера (Rollback)
+    cancel_damage_vl_threshold: 8
+
+    # Порог VL для автоматической заморозки подозреваемого (-1 чтобы отключить)
+    freeze_vl_threshold: 15
+
+    # Порог VL для автоматического кика/бана (-1 чтобы отключить)
+    kick_vl_threshold: 20
+    kick_message: "§c[SynapseAI] §fВы были отключены за использование постороннего ПО.\n§7Апелляция в Discord: §b{discord_url}"
+
+# ==============================================================================
+# СИСТЕМА ЗАМОРОЗКИ И ПРОВЕРКИ ИГРОКОВ (/aiac freeze)
+# ==============================================================================
+freeze:
+  # Кулдаун (перезарядка в секундах) между повторными вызовами freeze/unfreeze
+  cooldown_seconds: 3
+
+  # Телепортация игрока при вызове на проверку (freeze)
+  teleport:
+    enabled: true
+    
+    # Использовать кастомную точку для проверок (комнату допроса)?
+    # Если false — телепортирует на спавн мира (World Spawn).
+    # Вы можете сохранить точку прямо из игры командой: /aiac setfreezeloc
+    use_custom_location: false
+
+    custom_location:
+      world: "world"
+      x: 0.5
+      y: 100.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+
+  # При успешном прохождении проверки (unfreeze) отправлять игрока на спавн:
+  teleport_to_spawn_on_pass: true
+
+# ==============================================================================
+# ОФОРМЛЕНИЕ АЛЕРТОВ
+# ==============================================================================
+alerts:
+  prefix: "§8[§b§lSynapse§3AI§8] "
+  format: "§8[§b§lSynapse§3AI§8] §fИгрок §e{player} §fподозрение: §c{type} §7(Уверенность: §c{confidence}%§7, VL: §6{vl}§7)"
