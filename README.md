@@ -1,4 +1,4 @@
-# 🧠 Synapse AI-AntiCheat v2.0.0
+# 🧠 Synapse AI-AntiCheat v3.0.0
 
 <p align="center">
   <img src="https://img.shields.io/badge/Minecraft-1.16.5--1.20.4+-brightgreen?style=for-the-badge&logo=minecraft" alt="Minecraft Version">
