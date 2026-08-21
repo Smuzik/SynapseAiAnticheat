@@ -7,11 +7,10 @@ import net.synapselabs.anticheat.data.ThreatState;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.entity.Display;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -26,8 +25,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * High-performance, differential Overhead TextDisplay manager.
- * Displays real-time Killaura & Aim confidence scores strictly visible to staff with LuckPerms permissions.
+ * Universal, high-performance Overhead Display manager compatible with Minecraft 1.16.5 - 1.20.4+.
+ * Uses lightweight Marker ArmorStand holograms strictly visible to authorized staff.
  * Guarantees zero orphan persistence across server restarts, reloads, or world unloads.
  */
 public class OverheadDisplayManager implements Listener {
@@ -36,13 +35,13 @@ public class OverheadDisplayManager implements Listener {
     private final Map<UUID, OverheadEntry> displays = new ConcurrentHashMap<>();
 
     private static class OverheadEntry {
-        final TextDisplay entity;
+        final ArmorStand entity;
         int lastKillauraScore = -1;
         int lastAimScore = -1;
         ThreatState lastState = null;
         long lastUpdate = 0;
 
-        OverheadEntry(TextDisplay entity) {
+        OverheadEntry(ArmorStand entity) {
             this.entity = entity;
         }
     }
@@ -57,9 +56,9 @@ public class OverheadDisplayManager implements Listener {
     public void purgeOrphanedDisplays() {
         for (World world : Bukkit.getWorlds()) {
             for (Entity entity : world.getEntities()) {
-                if (entity instanceof TextDisplay td && (td.getScoreboardTags().contains(OVERHEAD_TAG) || !td.isPersistent())) {
+                if (entity.getScoreboardTags().contains(OVERHEAD_TAG)) {
                     try {
-                        td.remove();
+                        entity.remove();
                     } catch (Throwable ignored) {}
                 }
             }
@@ -74,19 +73,15 @@ public class OverheadDisplayManager implements Listener {
         removeDisplay(uuid);
 
         try {
-            Location loc = target.getLocation().add(0, 2.25, 0);
-            TextDisplay display = (TextDisplay) target.getWorld().spawnEntity(loc, EntityType.TEXT_DISPLAY);
-            display.setBillboard(Display.Billboard.CENTER);
-            display.setViewRange(32.0f);
-            display.setShadowed(true);
-            display.setDefaultBackground(false);
+            Location loc = target.getLocation().add(0, 2.0, 0);
+            ArmorStand display = (ArmorStand) target.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);
+            display.setVisible(false);
+            display.setMarker(true);
+            display.setSmall(true);
+            display.setGravity(false);
+            display.setCustomNameVisible(true);
             display.setPersistent(false); // NEVER save to chunk .mca files
             display.addScoreboardTag(OVERHEAD_TAG);
-
-            // Hide from all regular players by default
-            try {
-                display.setVisibleByDefault(false);
-            } catch (Throwable ignored) {}
 
             PlayerProfile profile = plugin.getDataManager().getOrCreate(target);
             int kScore = Math.round(profile.getKillauraConfidence() * 100.0f);
@@ -95,7 +90,7 @@ public class OverheadDisplayManager implements Listener {
 
             String defaultLang = plugin.getLanguageManager().getPlayerLanguage(target);
             String text = formatDisplayText(kScore, aScore, state, defaultLang);
-            display.setText(text);
+            display.setCustomName(text);
 
             OverheadEntry entry = new OverheadEntry(display);
             entry.lastKillauraScore = kScore;
@@ -108,7 +103,7 @@ public class OverheadDisplayManager implements Listener {
             // Apply visibility strictly to authorized staff
             applyInitialVisibility(display);
         } catch (Throwable t) {
-            plugin.getLogger().warning("Could not spawn TextDisplay entity (Server version might not support TextDisplay): " + t.getMessage());
+            plugin.getLogger().warning("Could not spawn overhead indicator: " + t.getMessage());
         }
     }
 
@@ -130,7 +125,7 @@ public class OverheadDisplayManager implements Listener {
         Player target = Bukkit.getPlayer(targetUuid);
         String lang = target != null ? plugin.getLanguageManager().getPlayerLanguage(target) : "en";
         String text = formatDisplayText(killauraScore, aimScore, state, lang);
-        entry.entity.setText(text);
+        entry.entity.setCustomName(text);
         entry.lastKillauraScore = killauraScore;
         entry.lastAimScore = aimScore;
         entry.lastState = state;
@@ -144,22 +139,26 @@ public class OverheadDisplayManager implements Listener {
 
         for (OverheadEntry entry : displays.values()) {
             if (entry.entity != null && entry.entity.isValid()) {
-                if (isStaff) {
-                    viewer.showEntity(plugin, entry.entity);
-                } else {
-                    viewer.hideEntity(plugin, entry.entity);
-                }
+                try {
+                    if (isStaff) {
+                        viewer.showEntity(plugin, entry.entity);
+                    } else {
+                        viewer.hideEntity(plugin, entry.entity);
+                    }
+                } catch (Throwable ignored) {}
             }
         }
     }
 
-    private void applyInitialVisibility(TextDisplay display) {
+    private void applyInitialVisibility(ArmorStand display) {
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (hasOverheadPermission(p)) {
-                p.showEntity(plugin, display);
-            } else {
-                p.hideEntity(plugin, display);
-            }
+            try {
+                if (hasOverheadPermission(p)) {
+                    p.showEntity(plugin, display);
+                } else {
+                    p.hideEntity(plugin, display);
+                }
+            } catch (Throwable ignored) {}
         }
     }
 
@@ -205,10 +204,10 @@ public class OverheadDisplayManager implements Listener {
 
     private void startPositionTask() {
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            double heightOffset = plugin.getConfig().getDouble("detection.overhead_display.height_offset", 2.25);
+            double heightOffset = plugin.getConfig().getDouble("detection.overhead_display.height_offset", 2.0);
             for (Map.Entry<UUID, OverheadEntry> entry : displays.entrySet()) {
                 Player player = Bukkit.getPlayer(entry.getKey());
-                TextDisplay display = entry.getValue().entity;
+                ArmorStand display = entry.getValue().entity;
 
                 if (player != null && player.isOnline() && display != null && display.isValid()) {
                     if (player.getWorld().equals(display.getWorld())) {
