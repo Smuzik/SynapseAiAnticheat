@@ -83,7 +83,7 @@ cd SynapseAiAnticheat
 ./gradlew shadowJar
 ```
 The compiled fat JAR will be located at:
-`build/libs/purpur-ai-anticheat-2.0.0.jar`
+`build/libs/purpur-ai-anticheat-3.0.0.jar`
 
 ---
 
