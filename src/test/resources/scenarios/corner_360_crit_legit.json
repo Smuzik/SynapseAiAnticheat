@@ -1,0 +1,45 @@
+{
+  "id": "corner_360_crit_legit",
+  "description": "Legitimate player doing a 360 jump-crit in a corner while taking knockback. Raw kinematics show huge angular velocity and deceleration; ContextEngine correctly applies the corner (0.25), knockback (0.40), crit (0.55), and deceleration discounts, keeping the final event risk well below SUSPICIOUS.",
+  "expected_verdict": "LEGIT",
+  "feature_schema_version": "combat.v2",
+  "features": {
+    "distance": 2.8,
+    "angle_offset_deg": 18.5,
+    "yaw_delta_1t": 165.0,
+    "yaw_delta_2t": 178.0,
+    "yaw_delta_5t": 182.0,
+    "yaw_accel": -42.0,
+    "yaw_jerk": -15.0,
+    "pitch_delta_1t": -12.0,
+    "pitch_delta_2t": -14.0,
+    "pitch_delta_5t": -15.0,
+    "pitch_accel": -6.0,
+    "pitch_jerk": -2.0,
+    "raycast_hit": 1.0,
+    "raycast_distance": 2.8,
+    "raycast_angle_error": 12.0,
+    "hitbox_edge_proximity": 0.4,
+    "is_falling": 1.0,
+    "is_sprinting": 1.0,
+    "attack_cooldown_progress": 1.0,
+    "rotation_variance_10t": 12.0,
+    "attack_interval_ticks": 12.0,
+    "target_switch_ticks": 100.0,
+    "attacker_velocity_sq": 0.4,
+    "victim_velocity_sq": 0.3
+  },
+  "signals": [
+    { "type": "HARD_SNAP", "fired": true },
+    { "type": "HITBOX_MISS", "fired": true }
+  ],
+  "context": {
+    "near_wall": true,
+    "in_corner": true,
+    "victim_knockback": true,
+    "attacker_ping_ms": 120,
+    "is_crit": true,
+    "target_switch": false,
+    "repeated_pattern": false
+  }
+}

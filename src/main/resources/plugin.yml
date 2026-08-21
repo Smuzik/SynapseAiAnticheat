@@ -1,0 +1,26 @@
+name: SynapseAiAnticheat
+version: '${version}'
+main: net.synapselabs.anticheat.AiAnticheatPlugin
+api-version: '1.16'
+authors: [Synapse Labs Studio]
+website: https://dsc.gg/synapselabs
+description: Next-Gen AI Machine Learning & Hybrid Anticheat for Spigot, Paper and Purpur
+softdepend: [GrimAC, LuckPerms]
+commands:
+  aianticheat:
+    description: Главная команда управления Synapse AI-AntiCheat
+    permission: aianticheat.admin
+    aliases: [aiac, synapse, synapseac]
+permissions:
+  aianticheat.admin:
+    description: Полные права администратора Synapse AI-AntiCheat
+    default: op
+  aianticheat.alerts:
+    description: Получение алертов о читерах в реальном времени
+    default: op
+  aianticheat.overhead:
+    description: Отображение оценки вероятности читов (Killaura/Aim) над головами игроков
+    default: op
+  aianticheat.freeze:
+    description: Право на заморозку подозрительных игроков
+    default: op

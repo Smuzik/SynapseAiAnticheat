@@ -1,0 +1,166 @@
+# ==============================================================================
+#                       Synapse AI-AntiCheat v3.0
+#                   Developed by: Synapse Labs Studio
+#                     Official Discord: https://dsc.gg/synapselabs
+#             Supported Platforms: Spigot, Paper, Purpur (1.16.5 - 1.20.4+)
+# ==============================================================================
+
+# Setup Gate: Set to true once an administrator executes /aiac and chooses the server language.
+# When false, the AI detection is in standby mode and prompts admins on join.
+setup_completed: false
+
+# Default Anticheat Language: "en" for English, "ru" for Russian
+language: "en"
+
+# Studio Branding & Community Links
+discord:
+  invite_url: "https://dsc.gg/synapselabs"
+  webhook:
+    enabled: false
+    url: "https://discord.com/api/webhooks/YOUR_WEBHOOK_HERE"
+    min_flags_to_send: 1
+    title: "🚨 Cheat Violation Detected"
+    embed_color: "#00E5FF"
+
+# Console Logging Settings
+logging:
+  console:
+    # Enable console detection alerts
+    enabled: true
+    # Verbose mode (log real-time combat kinematic traces per hit)
+    verbose: false
+
+# ==============================================================================
+# BAN & PUNISHMENT INTEGRATION (LiteBans, AdvancedBan, LibertyBans, Essentials, Bukkit)
+# ==============================================================================
+punishment:
+  # Master toggle for automatic punishment actions. Set to false for Shadow Mode (monitoring/logging only).
+  enabled: true
+  # Master Auto-Kick toggle: set to false to completely disable automatic kicking for cheat flags
+  # (Alerts, staff notifications, logs and dossiers will still work normally!)
+  auto_kick: false
+  # Mode: AUTO (detects installed ban manager), CUSTOM_COMMAND, or BUKKIT
+  mode: "AUTO"
+  commands:
+    manual_ban: "ban {player} 30d Unfair Advantage [SynapseAI] -s"
+    auto_ban: "tempban {player} 14d Auto-Ban: Cheating [SynapseAI] -s"
+    leave_on_freeze_ban: "tempban {player} 30d Refusal of Cheat Inspection [SynapseAI] -s"
+    kick: "kick {player} {reason}"
+
+# AI Neural Engine Model
+model:
+  file: "anticheat_model.onnx"
+
+# ==============================================================================
+# DETECTION ENGINE SETTINGS
+# ==============================================================================
+detection:
+  # Minimum AI neural confidence (0.00 - 1.00) required to treat hit as suspicious
+  min_confidence: 0.75
+
+  # ----------------------------------------------------------------------------
+  # RISK ENGINE CALIBRATION (Phase 1)
+  # The verdict is NEVER "one signal = cheat". Every event produces a set of weighted signals
+  # (Aim / Rotation / Combat / Hard checks / AI), context multiplies them up or down, and the
+  # result is aggregated over time (30s half-life) before a verdict is drawn. These are the two
+  # thresholds on that aggregated 0..100 risk score.
+  #   risk >= cheat_threshold      -> CHEAT      (punishable)
+  #   risk >= suspicious_threshold -> SUSPICIOUS (alert only, never punished)
+  # Raise these to be more lenient; lower them to be stricter.
+  calibration:
+    suspicious_threshold: 25.0
+    cheat_threshold: 60.0
+
+  # Server Lag & TPS Protection
+  tps_protection:
+    enabled: true
+    min_tps: 17.5
+
+  # Hard Combat Checks (now emit SIGNALS for the Risk Engine — they no longer punish on their own)
+  hard_checks:
+    # Reach below this is never even considered a reach signal (vanilla melee allowance).
+    max_reach: 3.25
+    # Lag-compensated reach at/above this that STILL exceeds the ping+knockback allowance is the only
+    # thing that triggers a protective, reversible damage cancel (never a punishment by itself).
+    reach_hard_flag: 3.65
+    # Ray must miss the hitbox by more than this angle (deg) to raise a hitbox-miss signal.
+    fov_outer_deg: 70.0
+
+  # Extra Modular Checks (FastBreak, FastPlace, AutoClicker, FastInteract)
+  extra_checks:
+    fastbreak:
+      enabled: true
+      max_speed_multiplier: 1.25
+    fastplace:
+      enabled: true
+      max_blocks_per_second: 20
+    autoclicker:
+      enabled: true
+      max_cps: 22
+      min_stddev: 0.08
+    fastinteract:
+      enabled: true
+      min_eat_ticks: 25
+      min_bow_ticks: 15
+
+  # GrimAC Integration Bridge (automatically ingests GrimAC detections)
+  grimac_bridge:
+    enabled: true
+    # Forward GrimAC violations to SynapseAI ThreatState & alerts
+    ingest_flags: true
+    # Boost suspicion on GrimAC Reach / Hitbox flags
+    boost_suspicion: true
+
+  # Punishment Thresholds
+  punishments:
+    # Set to false to disable all automated in-combat kicks and damage cancels (Shadow Mode)
+    enabled: true
+    # Auto-kick toggle for detections (set to false to disable automated kicking)
+    auto_kick: true
+    # Hard Checks (Blatant: Reach > 3.65m, Out-of-FOV > 65 deg, Robotic Snap)
+    hard:
+      # Auto-kick on hard check violations (set to false or flags_to_kick: 0 to disable)
+      auto_kick: true
+      flags_to_kick: 2
+      flags_to_cancel_damage: 1
+      cooldown_seconds: 10
+    # AI Checks (KillAura, Smooth-Aim, SilentAura)
+    ai:
+      # Auto-kick on AI check violations (set to false or flags_to_kick: 0 to disable)
+      auto_kick: true
+      flags_to_kick: 4
+      flags_to_cancel_damage: 2
+      cooldown_seconds: 30
+
+  # Kick Message
+  kick_message: "&#ff3333[SynapseAI] &fYou were disconnected for unfair play (&c{reason}&f).\n&7Appeal in Discord: &#00d2ff{discord_url}"
+
+  # Staff Sound Alerts
+  sound_alert:
+    enabled: true
+    sound: "ENTITY_EXPERIENCE_ORB_PICKUP"
+
+  # ==============================================================================
+  # OVERHEAD HEAD DISPLAY (TextDisplay visible to staff with LuckPerms permissions)
+  # ==============================================================================
+  overhead_display:
+    enabled: true
+    required_permission: "aianticheat.overhead"
+    height_offset: 2.25
+
+# ==============================================================================
+# PLAYER INSPECTION & FREEZE SYSTEM (/aiac freeze)
+# ==============================================================================
+freeze:
+  cooldown_seconds: 3
+  teleport:
+    enabled: true
+    use_custom_location: false
+    custom_location:
+      world: "world"
+      x: 0.5
+      y: 100.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+  teleport_to_spawn_on_pass: true
